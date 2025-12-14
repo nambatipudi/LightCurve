@@ -1,0 +1,65 @@
+{
+  "name": "lightcurve",
+  "version": "0.1.0",
+  "description": "An observatory for your message streams",
+  "main": "dist-electron/electron/main.js",
+  "author": "Your Name",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "npm run build:electron && wait-on http://localhost:5173 && electron .",
+    "rebuild:pulsar": "npm rebuild pulsar-client --runtime=electron --target=28.0.0 --dist-url=https://electronjs.org/headers",
+    "build": "npm run build:renderer && npm run build:electron && npm run build:package",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:package": "electron-builder",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
+  },
+  "dependencies": {
+    "pulsar-client": "^1.9.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.7",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.lightcurve.app",
+    "productName": "LightCurve",
+    "publish": null,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

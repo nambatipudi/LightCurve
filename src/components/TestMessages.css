@@ -1,0 +1,442 @@
+.test-messages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  height: 100%;
+  background: #2d3548;
+}
+
+.test-messages-left,
+.test-messages-right {
+  background: #1a1f2e;
+  overflow-y: auto;
+}
+
+.test-section {
+  padding: 24px;
+}
+
+.test-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  background: #151a27;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #1e2433;
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled,
+.form-group select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Properties List */
+.properties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.property-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.property-item input {
+  margin: 0;
+}
+
+.remove-button {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #f87171;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.remove-button:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+}
+
+.add-property-button {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px dashed #334155;
+  color: #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.add-property-button:hover:not(:disabled) {
+  background: #334155;
+  border-color: #475569;
+  border-style: solid;
+}
+
+/* Send Button */
+.send-button {
+  width: 100%;
+  padding: 12px;
+  background: #3b82f6;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Consumer Controls */
+.consumer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-group-inline label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.form-group-inline input,
+.form-group-inline select {
+  flex: 1;
+  padding: 8px 12px;
+  background: #151a27;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.form-group-inline select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.form-group-inline select:hover:not(:disabled) {
+  border-color: #475569;
+  background-color: #1e2433;
+}
+
+.form-group-inline select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.form-group-inline select option {
+  background: #151a27;
+  color: #cbd5e1;
+  padding: 8px;
+}
+
+.consumer-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.control-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+
+.control-button.start {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.control-button.start:hover {
+  background: #059669;
+}
+
+.control-button.pause {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.control-button.pause:hover {
+  background: #d97706;
+}
+
+.control-button.resume {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.control-button.resume:hover {
+  background: #2563eb;
+}
+
+.control-button.stop {
+  background: transparent;
+  border-color: #ef4444;
+  color: #f87171;
+}
+
+.control-button.stop:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.control-button.clear {
+  background: transparent;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.control-button.clear:hover:not(:disabled) {
+  background: #334155;
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Messages Log */
+.messages-log {
+  border: 1px solid #2d3548;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #151a27;
+}
+
+.messages-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #1e2433;
+  border-bottom: 1px solid #2d3548;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #10b981;
+}
+
+.status-indicator.paused {
+  color: #f59e0b;
+}
+
+.messages-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.messages-empty {
+  padding: 32px;
+  text-align: center;
+  color: #64748b;
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.message-item {
+  background: #1a1f2e;
+  border: 1px solid #2d3548;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+
+.message-item:hover {
+  background: #1e2433;
+  border-color: #3b82f6;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.message-time {
+  font-weight: 600;
+}
+
+.message-id {
+  font-family: 'Courier New', monospace;
+  opacity: 0.7;
+}
+
+.message-body {
+  margin-bottom: 8px;
+}
+
+.message-body pre {
+  margin: 0;
+  padding: 8px;
+  background: #0f1419;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Courier New', monospace;
+}
+
+.message-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #64748b;
+  font-family: 'Courier New', monospace;
+}
+
+.meta-item {
+  background: #334155;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Messages */
+.error-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: #f87171;
+  font-size: 13px;
+}
+
+.success-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  color: #34d399;
+  font-size: 13px;
+}
+
+/* Scrollbars */
+.test-messages-left::-webkit-scrollbar,
+.test-messages-right::-webkit-scrollbar,
+.messages-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.test-messages-left::-webkit-scrollbar-track,
+.test-messages-right::-webkit-scrollbar-track,
+.messages-list::-webkit-scrollbar-track {
+  background: #1a1f2e;
+}
+
+.test-messages-left::-webkit-scrollbar-thumb,
+.test-messages-right::-webkit-scrollbar-thumb,
+.messages-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.test-messages-left::-webkit-scrollbar-thumb:hover,
+.test-messages-right::-webkit-scrollbar-thumb:hover,
+.messages-list::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
