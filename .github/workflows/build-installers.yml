@@ -1,0 +1,59 @@
+name: Build Installers
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+
+    env:
+      # Disable code signing auto-discovery; builds will be unsigned by default
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+      # Prevent errors if Apple notarization env vars aren't set
+      APPLE_NOTARIZATION: false
+      # Skip Linux AppImage signing
+      ELECTRON_BUILDER_SKIP_TAR: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build renderer
+        run: |
+          npm run build:renderer
+
+      - name: Build Electron main/preload
+        run: |
+          npm run build:electron
+
+      - name: Build installers with electron-builder (no publish)
+        run: |
+          npx electron-builder --publish=never
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: LightCurve-${{ matrix.os }}-artifacts
+          path: |
+            release/**
+          if-no-files-found: warn
