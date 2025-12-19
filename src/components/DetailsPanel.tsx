@@ -191,9 +191,23 @@ const TopicDetails: React.FC<{ clusterId: string; node: TreeNode }> = ({
   clusterId, 
   node 
 }) => {
+  const parseTopicName = (fullTopicName: string) => {
+    const match = fullTopicName.match(/^(persistent|non-persistent):\/\/([^/]+)\/([^/]+)\/(.+)$/);
+    if (!match) {
+      return { persistence: 'persistent', tenant: '', namespace: '', topic: fullTopicName };
+    }
+    return {
+      persistence: match[1],
+      tenant: match[2],
+      namespace: match[3],
+      topic: match[4],
+    };
+  };
   const [activeTab, setActiveTab] = useState<'overview' | 'test' | 'browse'>('overview');
+  const [browsingTopicName, setBrowsingTopicName] = useState<string>('');
   const [stats, setStats] = useState<TopicStats | null>(null);
   const [subscriptions, setSubscriptions] = useState<string[]>([]);
+  const [dlqTopics, setDlqTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -221,6 +235,34 @@ const TopicDetails: React.FC<{ clusterId: string; node: TreeNode }> = ({
 
       if (subsResponse.success && subsResponse.data) {
         setSubscriptions(subsResponse.data);
+      }
+
+      // Discover DLQ/Retry topics in the same namespace
+      try {
+        const { tenant, namespace, topic } = parseTopicName(fullTopicName);
+        const topicsResp = await window.lightcurve.admin.listTopics(clusterId, tenant, namespace);
+        const allTopics = topicsResp.success && topicsResp.data ? topicsResp.data : [];
+        const candidates = new Set<string>();
+        // Common DLQ naming patterns
+        const baseName = topic;
+        const patterns = [
+          `${baseName}-DLQ`,
+          `${baseName}-RETRY`,
+          // Include subscription-qualified defaults
+          ...subscriptions.map(s => `${baseName}-${s}-DLQ`),
+          ...subscriptions.map(s => `${baseName}-${s}-RETRY`),
+        ];
+
+        for (const t of allTopics) {
+          const simpleName = t.replace(/^persistent:\/\//, '').replace(/^non-persistent:\/\//, '').split('/').slice(2).join('/');
+          if (simpleName && (simpleName.endsWith('-DLQ') || simpleName.endsWith('-RETRY') || patterns.some(p => simpleName.endsWith(p)))) {
+            candidates.add(t);
+          }
+        }
+        setDlqTopics(Array.from(candidates));
+      } catch (e) {
+        // Non-fatal: DLQ discovery best-effort
+        console.warn('[DLQ] Discovery failed:', e);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load topic data');
@@ -383,6 +425,30 @@ const TopicDetails: React.FC<{ clusterId: string; node: TreeNode }> = ({
                     </div>
                   </div>
                 )}
+
+                {dlqTopics.length > 0 && (
+                  <div className="details-section">
+                    <h3>Dead Letter / Retry Topics</h3>
+                    <div className="details-list">
+                      {dlqTopics.map((dlq, idx) => (
+                        <div key={idx} className="list-item">
+                          <div className="list-item-name detail-value-small">{dlq}</div>
+                          <div className="list-item-actions">
+                            <button 
+                              className="action-button"
+                              onClick={() => {
+                                setBrowsingTopicName(dlq);
+                                setActiveTab('browse');
+                              }}
+                            >
+                              📖 Browse
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -406,7 +472,7 @@ const TopicDetails: React.FC<{ clusterId: string; node: TreeNode }> = ({
           </>
         )
         ) : activeTab === 'browse' ? (
-          <BrowseMessages clusterId={clusterId} topicName={fullTopicName} />
+          <BrowseMessages clusterId={clusterId} topicName={browsingTopicName || fullTopicName} />
         ) : (
           <TestMessages clusterId={clusterId} topicName={fullTopicName} />
         )}
