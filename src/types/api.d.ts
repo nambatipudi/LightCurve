@@ -13,6 +13,7 @@ import type {
   SendMessageOptions,
   IPCResponse,
   ConnectedCluster,
+  SavedProfile,
 } from '../shared/types';
 
 export interface LightCurveAPI {
@@ -20,6 +21,12 @@ export interface LightCurveAPI {
     connect: (config: ClusterConfig) => Promise<IPCResponse<ConnectedCluster>>;
     disconnect: (clusterId: string) => Promise<IPCResponse<void>>;
     listConnected: () => Promise<IPCResponse<ConnectedCluster[]>>;
+  };
+  profiles: {
+    listProfiles: () => Promise<IPCResponse<SavedProfile[]>>;
+    saveProfile: (profile: Omit<SavedProfile, 'profileId' | 'savedAt'>) => Promise<IPCResponse<SavedProfile>>;
+    deleteProfile: (profileId: string) => Promise<IPCResponse<void>>;
+    getProfile: (profileId: string) => Promise<IPCResponse<SavedProfile | null>>;
   };
   admin: {
     listClusters: (clusterId: string) => Promise<IPCResponse<string[]>>;

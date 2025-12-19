@@ -3,13 +3,36 @@
  * These types define the IPC API contract
  */
 
+// OAuth configuration for client_credentials flow
+export interface OAuthConfig {
+  type: 'client_credentials';
+  clientId: string;
+  clientSecret: string;
+  issuerUrl: string;
+  audience: string;
+  scopes?: string[];
+}
+
+// Authentication configuration (token or OAuth)
+export type AuthConfig = {
+  type: 'token';
+  token: string;
+} | {
+  type: 'oauth';
+  oauth: OAuthConfig;
+} | {
+  type: 'none';
+};
+
 // Cluster connection configuration
 export interface ClusterConfig {
   clusterId: string;
   adminUrl: string;
   serviceUrl: string;
-  authToken?: string;
   name?: string;
+  auth?: AuthConfig;
+  // Legacy support for direct authToken (converted to token auth internally)
+  authToken?: string;
 }
 
 // Pulsar topic statistics (simplified from PulsarTopicStats)
@@ -121,4 +144,15 @@ export interface ConnectedCluster {
   serviceUrl: string;
   connected: boolean;
   connectedAt: number;
+}
+
+// Saved connection profile
+export interface SavedProfile {
+  profileId: string;
+  clusterId: string;
+  name: string;
+  adminUrl: string;
+  serviceUrl: string;
+  auth?: AuthConfig;
+  savedAt: number;
 }

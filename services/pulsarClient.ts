@@ -4,10 +4,12 @@
  */
 
 import Pulsar from 'pulsar-client';
+import { OAuthClient, type OAuthClientConfig } from './oauthClient';
 
 export interface PulsarClientConfig {
   serviceUrl: string;
   authentication?: Pulsar.AuthenticationTls | Pulsar.AuthenticationToken | Pulsar.AuthenticationAthenz;
+  oauthConfig?: OAuthClientConfig;
   operationTimeoutSeconds?: number;
   ioThreads?: number;
   messageListenerThreads?: number;
@@ -253,26 +255,40 @@ export class PulsarReader {
 export class PulsarMessageClient {
   private client: Pulsar.Client | null = null;
   private readonly config: PulsarClientConfig;
+  private oauthClient: OAuthClient | null = null;
   private producers: Set<PulsarProducer> = new Set();
   private consumers: Set<PulsarConsumer> = new Set();
   private readers: Set<PulsarReader> = new Set();
 
   constructor(config: PulsarClientConfig) {
     this.config = config;
+    // Initialize OAuth client if configured
+    if (config.oauthConfig) {
+      this.oauthClient = new OAuthClient(config.oauthConfig);
+    }
   }
 
   /**
    * Initialize the Pulsar client connection
    */
-  private ensureClient(): Pulsar.Client {
+  private async ensureClient(): Promise<Pulsar.Client> {
     if (!this.client) {
       const clientConfig: Pulsar.ClientConfig = {
         serviceUrl: this.config.serviceUrl,
       };
 
-      if (this.config.authentication) {
+      // If OAuth is configured, get token and set up token authentication
+      if (this.oauthClient) {
+        try {
+          const token = await this.oauthClient.getAccessToken();
+          clientConfig.authentication = new Pulsar.AuthenticationToken({ token });
+        } catch (error) {
+          throw new Error(`Failed to acquire OAuth token for Pulsar client: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      } else if (this.config.authentication) {
         clientConfig.authentication = this.config.authentication;
       }
+      
       if (this.config.operationTimeoutSeconds !== undefined) {
         clientConfig.operationTimeoutSeconds = this.config.operationTimeoutSeconds;
       }
@@ -307,7 +323,7 @@ export class PulsarMessageClient {
    * Create a producer for a specific topic
    */
   async createProducer(topic: string, options?: Partial<ProducerOptions>): Promise<PulsarProducer> {
-    const client = this.ensureClient();
+    const client = await this.ensureClient();
 
     const producerConfig: Pulsar.ProducerConfig = {
       topic,
@@ -332,7 +348,7 @@ export class PulsarMessageClient {
    * Create a consumer for a specific topic and subscription
    */
   async createConsumer(options: ConsumerOptions): Promise<PulsarConsumer> {
-    const client = this.ensureClient();
+    const client = await this.ensureClient();
 
     const consumerConfig: Pulsar.ConsumerConfig = {
       topic: options.topic,
@@ -374,7 +390,7 @@ export class PulsarMessageClient {
    * Create a reader for a specific topic
    */
   async createReader(options: ReaderOptions): Promise<PulsarReader> {
-    const client = this.ensureClient();
+    const client = await this.ensureClient();
 
     const readerConfig: Pulsar.ReaderConfig = {
       topic: options.topic,

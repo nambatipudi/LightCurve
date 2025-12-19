@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { PulsarAdmin } from '../services/pulsarAdmin';
 import { PulsarMessageClient, Pulsar, PulsarReader } from '../services/pulsarClient';
+import { ConnectionProfileStorage } from '../services/connectionProfileStorage';
 import type {
   ClusterConfig,
   TopicStats,
@@ -22,9 +23,39 @@ import type {
   SendMessageOptions,
   IPCResponse,
   ConnectedCluster,
+  SavedProfile,
 } from '../src/shared/types';
 
 let mainWindow: BrowserWindow | null = null;
+
+// Bridge main-process console output to renderer for easier debugging
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  error: console.error,
+  info: console.info,
+  debug: console.debug,
+};
+
+function forwardLog(level: 'log' | 'warn' | 'error' | 'info' | 'debug', args: any[]): void {
+  // Always print to the real console
+  (originalConsole[level] || originalConsole.log).apply(console, args as any);
+
+  // Also forward to the renderer if it exists
+  if (mainWindow) {
+    try {
+      mainWindow.webContents.send('log', { level, args: args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))) });
+    } catch {
+      // Ignore if renderer not ready
+    }
+  }
+}
+
+console.log = (...args: any[]) => forwardLog('log', args);
+console.warn = (...args: any[]) => forwardLog('warn', args);
+console.error = (...args: any[]) => forwardLog('error', args);
+console.info = (...args: any[]) => forwardLog('info', args);
+console.debug = (...args: any[]) => forwardLog('debug', args);
 
 // Store connected clusters and their clients
 interface ClusterConnection {
@@ -37,6 +68,7 @@ interface ClusterConnection {
 const connectedClusters = new Map<string, ClusterConnection>();
 const producers = new Map<string, any>();
 const consumers = new Map<string, any>();
+const profileStorage = new ConnectionProfileStorage();
 let producerIdCounter = 0;
 let consumerIdCounter = 0;
 
@@ -71,9 +103,21 @@ function createWindow(): void {
   });
 
   if (isDev) {
-    // Load from Vite dev server
-    console.log('[Main] Loading from Vite dev server: http://localhost:5173');
-    mainWindow.loadURL('http://localhost:5173');
+    // Load from Vite dev server - try common ports
+    const vitePort = process.env.VITE_PORT || '5173';
+    const viteUrl = `http://localhost:${vitePort}`;
+    console.log(`[Main] Loading from Vite dev server: ${viteUrl}`);
+    mainWindow.loadURL(viteUrl).catch(err => {
+      console.error('[Main] Failed to load from Vite:', err);
+      // If 5173 fails, try 5174
+      if (vitePort === '5173') {
+        const fallbackUrl = 'http://localhost:5174';
+        console.log(`[Main] Retrying with fallback: ${fallbackUrl}`);
+        mainWindow?.loadURL(fallbackUrl).catch(err2 => {
+          console.error('[Main] Fallback also failed:', err2);
+        });
+      }
+    });
     mainWindow.webContents.openDevTools();
   } else {
     // Load from built files
@@ -177,6 +221,46 @@ function error(message: string): IPCResponse<never> {
 }
 
 // ----------------------------------------------------------------------------
+// Profile Management Handlers
+// ----------------------------------------------------------------------------
+
+ipcMain.handle('profiles:listProfiles', (): IPCResponse<SavedProfile[]> => {
+  try {
+    const profiles = profileStorage.loadProfiles();
+    return success(profiles);
+  } catch (err) {
+    return error(`Failed to load profiles: ${err instanceof Error ? err.message : String(err)}`);
+  }
+});
+
+ipcMain.handle('profiles:saveProfile', (_event, profile: Omit<SavedProfile, 'profileId' | 'savedAt'>): IPCResponse<SavedProfile> => {
+  try {
+    const saved = profileStorage.saveProfile(profile);
+    return success(saved);
+  } catch (err) {
+    return error(`Failed to save profile: ${err instanceof Error ? err.message : String(err)}`);
+  }
+});
+
+ipcMain.handle('profiles:deleteProfile', (_event, profileId: string): IPCResponse<void> => {
+  try {
+    profileStorage.deleteProfile(profileId);
+    return success(undefined);
+  } catch (err) {
+    return error(`Failed to delete profile: ${err instanceof Error ? err.message : String(err)}`);
+  }
+});
+
+ipcMain.handle('profiles:getProfile', (_event, profileId: string): IPCResponse<SavedProfile | null> => {
+  try {
+    const profile = profileStorage.getProfile(profileId);
+    return success(profile);
+  } catch (err) {
+    return error(`Failed to get profile: ${err instanceof Error ? err.message : String(err)}`);
+  }
+});
+
+// ----------------------------------------------------------------------------
 // Cluster Management Handlers
 // ----------------------------------------------------------------------------
 
@@ -187,18 +271,36 @@ ipcMain.handle('cluster:connect', async (_event, config: ClusterConfig): Promise
       return error(`Cluster ${config.clusterId} is already connected`);
     }
 
-    // Create admin and client instances
-    const admin = new PulsarAdmin({
+    // Build authentication config for PulsarAdmin
+    const adminAuthConfig: { baseUrl: string; authToken?: string; oauthConfig?: any } = {
       baseUrl: config.adminUrl,
-      authToken: config.authToken,
-    });
+    };
 
-    const client = new PulsarMessageClient({
+    // Build authentication config for PulsarMessageClient
+    const clientConfig: { serviceUrl: string; authentication?: any; oauthConfig?: any } = {
       serviceUrl: config.serviceUrl,
-      authentication: config.authToken
-        ? new Pulsar.AuthenticationToken({ token: config.authToken })
-        : undefined,
-    });
+    };
+
+    // Handle different auth types
+    if (config.auth) {
+      if (config.auth.type === 'token') {
+        // Token authentication
+        adminAuthConfig.authToken = config.auth.token;
+        clientConfig.authentication = new Pulsar.AuthenticationToken({ token: config.auth.token });
+      } else if (config.auth.type === 'oauth') {
+        // OAuth authentication
+        adminAuthConfig.oauthConfig = config.auth.oauth;
+        clientConfig.oauthConfig = config.auth.oauth;
+      }
+    } else if (config.authToken) {
+      // Legacy support for direct authToken (for backward compatibility)
+      adminAuthConfig.authToken = config.authToken;
+      clientConfig.authentication = new Pulsar.AuthenticationToken({ token: config.authToken });
+    }
+
+    // Create admin and client instances
+    const admin = new PulsarAdmin(adminAuthConfig);
+    const client = new PulsarMessageClient(clientConfig);
 
     // Store the connection
     const connection: ClusterConnection = {
@@ -286,7 +388,18 @@ ipcMain.handle('admin:listTenants', async (_event, clusterId: string): Promise<I
       return error(`Cluster ${clusterId} is not connected`);
     }
 
-    const tenants = await connection.admin.listTenants();
+    let tenants = await connection.admin.listTenants();
+    
+    // If we got no tenants, try discovering accessible ones
+    if (tenants.length === 0) {
+      console.log('[Main] No tenants returned, attempting discovery...');
+      const discovered = await connection.admin.discoverAccessibleTenants();
+      if (discovered.length > 0) {
+        console.log('[Main] Discovered accessible tenants:', discovered);
+        tenants = discovered;
+      }
+    }
+    
     return success(tenants);
   } catch (err) {
     return error(`Failed to list tenants: ${err instanceof Error ? err.message : String(err)}`);

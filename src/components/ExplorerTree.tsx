@@ -25,6 +25,7 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
   const [tenants, setTenants] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [manualTenant, setManualTenant] = useState('');
 
   // Load tenants on mount
   useEffect(() => {
@@ -265,9 +266,43 @@ export const ExplorerTree: React.FC<ExplorerTreeProps> = ({
           ⟳
         </button>
       </div>
+      <div style={{ display: 'flex', gap: '0.5rem', padding: '0 0.75rem 0.75rem' }}>
+        <input
+          type="text"
+          value={manualTenant}
+          onChange={(e) => setManualTenant(e.target.value)}
+          placeholder="Enter tenant name manually"
+          style={{ flex: 1 }}
+        />
+        <button
+          onClick={() => {
+            const name = manualTenant.trim();
+            if (!name) return;
+            // Avoid duplicates
+            setTenants(prev => {
+              if (prev.some(t => t.label === name)) return prev;
+              return [...prev, { id: `tenant:${name}`, type: 'tenant', label: name, expanded: false }];
+            });
+            setManualTenant('');
+          }}
+          disabled={!manualTenant.trim()}
+        >
+          Add tenant
+        </button>
+      </div>
       <div className="explorer-tree-content">
         {tenants.length === 0 ? (
-          <div className="explorer-tree-empty">No tenants found</div>
+          <div className="explorer-tree-empty">
+            <p>No tenants found. Common tenant names to try:</p>
+            <ul style={{ fontSize: '12px', textAlign: 'left', marginTop: '0.5rem' }}>
+              <li><code>express-returns</code></li>
+              <li><code>public</code></li>
+              <li><code>default</code></li>
+              <li><code>vespa</code></li>
+              <li><code>notification-service</code></li>
+            </ul>
+            <p style={{ marginTop: '0.5rem', fontSize: '12px' }}>Enter a tenant name above to explore it.</p>
+          </div>
         ) : (
           tenants.map(node => renderNode(node))
         )}

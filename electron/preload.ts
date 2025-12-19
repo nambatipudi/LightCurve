@@ -11,6 +11,7 @@ import type {
   SendMessageOptions,
   IPCResponse,
   ConnectedCluster,
+  SavedProfile,
 } from '../src/shared/types';
 
 // Expose a secure API to the renderer process
@@ -26,6 +27,22 @@ contextBridge.exposeInMainWorld('lightcurve', {
     },
     listConnected: async (): Promise<IPCResponse<ConnectedCluster[]>> => {
       return await ipcRenderer.invoke('cluster:list');
+    },
+  },
+
+  // Connection Profiles
+  profiles: {
+    listProfiles: async (): Promise<IPCResponse<SavedProfile[]>> => {
+      return await ipcRenderer.invoke('profiles:listProfiles');
+    },
+    saveProfile: async (profile: Omit<SavedProfile, 'profileId' | 'savedAt'>): Promise<IPCResponse<SavedProfile>> => {
+      return await ipcRenderer.invoke('profiles:saveProfile', profile);
+    },
+    deleteProfile: async (profileId: string): Promise<IPCResponse<void>> => {
+      return await ipcRenderer.invoke('profiles:deleteProfile', profileId);
+    },
+    getProfile: async (profileId: string): Promise<IPCResponse<SavedProfile | null>> => {
+      return await ipcRenderer.invoke('profiles:getProfile', profileId);
     },
   },
 
@@ -121,6 +138,15 @@ contextBridge.exposeInMainWorld('lightcurve', {
       return await ipcRenderer.invoke('consumer:close', consumerId);
     },
   },
+
+  // Logs from main process forwarded to renderer
+  logs: {
+    onLog: (callback: (payload: { level: string; args: string[] }) => void) => {
+      const listener = (_event: any, payload: { level: string; args: string[] }) => callback(payload);
+      ipcRenderer.on('log', listener);
+      return () => ipcRenderer.removeListener('log', listener);
+    },
+  },
 });
 
 // Type definitions for the exposed API
@@ -159,6 +185,9 @@ export interface LightCurveAPI {
     receive: (consumerId: string, timeoutMs?: number) => Promise<IPCResponse<unknown>>;
     acknowledge: (consumerId: string, messageId: string) => Promise<IPCResponse<void>>;
     close: (consumerId: string) => Promise<IPCResponse<void>>;
+  };
+  logs: {
+    onLog: (callback: (payload: { level: string; args: string[] }) => void) => () => void;
   };
 }
 
