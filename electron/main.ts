@@ -555,13 +555,19 @@ ipcMain.handle('messages:peek', async (_event, clusterId: string, options: PeekM
 
       const messages: any[] = [];
       let count = 0;
+      let consecutiveNulls = 0;
+      const maxConsecutiveNulls = 3; // Stop after 3 consecutive timeouts
 
       // Read up to maxMessages
-      while (count < maxMessages && reader.hasNext()) {
+      while (count < maxMessages && consecutiveNulls < maxConsecutiveNulls) {
         try {
-          const msg = await reader.readNext_timeout(1000); // 1 second timeout
-          if (!msg) break;
+          const msg = await reader.readNext_timeout(2000); // 2 second timeout
+          if (!msg) {
+            consecutiveNulls++;
+            continue;
+          }
 
+          consecutiveNulls = 0; // Reset on successful read
           const payload = typeof msg.data === 'string' ? msg.data : msg.data?.toString('utf-8') || '';
           messages.push({
             messageId: msg.messageId || `msg-${count}`,
@@ -572,9 +578,9 @@ ipcMain.handle('messages:peek', async (_event, clusterId: string, options: PeekM
           });
           count++;
         } catch (readErr) {
-          // If read fails, stop trying to read more
+          // If read fails, increment null counter
           console.warn('[peek] Error reading message:', readErr);
-          break;
+          consecutiveNulls++;
         }
       }
 

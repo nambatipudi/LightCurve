@@ -155,4 +155,5 @@ export interface SavedProfile {
   serviceUrl: string;
   auth?: AuthConfig;
   savedAt: number;
+  structureSourceProfileId?: string; // Reference profile to use for namespace/topic discovery if this profile lacks permissions
 }
