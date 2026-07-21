@@ -1,0 +1,53 @@
+.split-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.split-layout-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.split-layout-divider {
+  flex: 0 0 auto;
+  width: 5px;
+  margin: 0 -2px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.split-layout-divider::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-subtle);
+  transition: background 0.15s;
+}
+
+.split-layout-divider:hover,
+.split-layout-divider.dragging {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.split-layout-divider:hover::before,
+.split-layout-divider.dragging::before {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+.split-layout-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}

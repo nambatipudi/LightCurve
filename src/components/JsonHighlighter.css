@@ -1,0 +1,31 @@
+.json-highlighter {
+  display: block;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.json-key {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.json-string {
+  color: #34d399;
+}
+
+.json-number {
+  color: #f59e0b;
+}
+
+.json-literal {
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+.json-punctuation {
+  color: #94a3b8;
+}
